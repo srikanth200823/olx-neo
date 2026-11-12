@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OLX Neo — Buy, Sell & Chat on WhatsApp</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card: rgba(22, 29, 47, 0.88);
+      --border: rgba(255, 255, 255, 0.12);
+      --primary: #3b82f6;
+      --accent: #10b981;
+      --whatsapp: #25D366;
+      --danger: #f43f5e;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+    body {
+      background: radial-gradient(circle at 15% 15%, #1e293b 0%, #0b0f19 68%);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Animated Floating Background Orbs */
+    .bg-orb {
+      position: fixed; border-radius: 50%; filter: blur(95px);
+      z-index: -1; opacity: 0.35;
+      animation: floatOrb 12s infinite alternate ease-in-out;
+    }
+    .orb-1 { width: 360px; height: 360px; background: #3b82f6; top: -80px; left: -80px; }
+    .orb-2 { width: 320px; height: 320px; background: #10b981; bottom: -60px; right: -60px; animation-delay: -5s; }
+    @keyframes floatOrb {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(45px, 35px) scale(1.12); }
+    }
+
+    /* Animations */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(22px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes heartPop {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.4); }
+      100% { transform: scale(1); }
+    }
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55); }
+      50% { box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); }
+    }
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(25px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    /* Sticky Glass Navbar */
+    header {
+      position: sticky; top: 0; z-index: 50;
+      backdrop-filter: blur(18px);
+      background: rgba(11, 15, 25, 0.85);
+      border-bottom: 1px solid var(--border);
+      padding: 0.85rem 1.5rem;
+    }
+    .nav-container {
+      max-width: 1280px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+    }
+    .logo {
+      font-size: 1.7rem; font-weight: 800; letter-spacing: -1px;
+      background: linear-gradient(135deg, #60a5fa, #34d399);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      cursor: pointer;
+    }
+    .search-bar { flex: 1; max-width: 460px; }
+    .search-bar input {
+      width: 100%; padding: 0.72rem 1.15rem;
+      border-radius: 999px; border: 1px solid var(--border);
+      background: rgba(255,255,255,0.06); color: var(--text);
+      outline: none; transition: 0.25s;
+    }
+    .search-bar input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.25);
+    }
+
+    .nav-actions { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+    .btn {
+      padding: 0.6rem 1.05rem; border-radius: 999px; font-weight: 600; font-size: 0.86rem;
+      border: 1px solid var(--border); background: rgba(255,255,255,0.06);
+      color: var(--text); cursor: pointer; transition: 0.25s; display: inline-flex; align-items: center; gap: 0.4rem;
+    }
+    .btn:hover { transform: translateY(-2px); background: rgba(255,255,255,0.14); }
+    .btn-sell {
+      background: linear-gradient(135deg, #10b981, #059669);
+      border: none; color: #fff; font-weight: 700;
+      animation: pulseGlow 2.5s infinite;
+    }
+    .badge {
+      background: var(--danger); color: #fff; font-size: 0.72rem;
+      padding: 2px 7px; border-radius: 99px; font-weight: 700;
+    }
+
+    /* Category Pills */
+    .categories {
+      max-width: 1280px; margin: 1.2rem auto 0.5rem; padding: 0 1.5rem;
+      display: flex; gap: 0.6rem; overflow-x: auto; scrollbar-width: none;
+    }
+    .cat-pill {
+      padding: 0.5rem 1.1rem; border-radius: 999px; font-size: 0.86rem; font-weight: 600;
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+      color: var(--muted); cursor: pointer; white-space: nowrap; transition: 0.25s;
+    }
+    .cat-pill.active, .cat-pill:hover {
+      background: var(--primary); color: #fff; border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+
+    /* Product Grid */
+    .container { max-width: 1280px; margin: 1.2rem auto 4rem; padding: 0 1.5rem; }
+    .grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.4rem;
+    }
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 18px; overflow: hidden;
+      transition: transform 0.3s cubic-bezier(.16,1,.3,1), box-shadow 0.3s ease, border-color 0.3s ease;
+      animation: fadeUp 0.45s ease backwards;
+      display: flex; flex-direction: column; position: relative;
+    }
+    .card:hover {
+      transform: translateY(-7px);
+      border-color: rgba(59, 130, 246, 0.55);
+      box-shadow: 0 18px 38px -12px rgba(0, 0, 0, 0.65);
+    }
+    .card-img-wrap {
+      position: relative; height: 205px; overflow: hidden; background: #0f172a;
+    }
+    .card-img-wrap img {
+      width: 100%; height: 100%; object-fit: cover; transition: transform 0.45s ease;
+    }
+    .card:hover .card-img-wrap img { transform: scale(1.07); }
+    .cat-tag {
+      position: absolute; top: 12px; left: 12px;
+      background: rgba(15, 23, 42, 0.82); backdrop-filter: blur(6px);
+      padding: 4px 10px; border-radius: 99px; font-size: 0.74rem; font-weight: 600;
+    }
+    .wish-btn {
+      position: absolute; top: 12px; right: 12px;
+      width: 38px; height: 38px; border-radius: 50%; border: none;
+      background: rgba(15, 23, 42, 0.8); color: #fff; font-size: 1.15rem;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: 0.2s;
+    }
+    .wish-btn.active { color: var(--danger); animation: heartPop 0.35s ease; }
+
+    .card-body { padding: 1.1rem; display: flex; flex-direction: column; flex: 1; }
+    .price { font-size: 1.4rem; font-weight: 800; color: #fff; margin-bottom: 0.25rem; }
+    .title {
+      font-size: 0.98rem; font-weight: 600; color: #e2e8f0;
+      margin-bottom: 0.45rem; line-height: 1.35;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .desc {
+      font-size: 0.82rem; color: var(--muted); margin-bottom: 0.85rem;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .meta {
+      margin-top: auto; display: flex; justify-content: space-between;
+      font-size: 0.76rem; color: var(--muted); padding-top: 0.65rem;
+      border-top: 1px solid rgba(255,255,255,0.07);
+    }
+    .card-actions {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.55rem; margin-top: 0.85rem;
+    }
+    .btn-wa {
+      background: rgba(37, 211, 102, 0.15); color: #4ade80;
+      border: 1px solid rgba(37, 211, 102, 0.35);
+      padding: 0.55rem; border-radius: 10px; font-weight: 700; font-size: 0.82rem;
+      text-align: center; text-decoration: none; transition: 0.2s;
+    }
+    .btn-wa:hover { background: var(--whatsapp); color: #052e16; }
+    .btn-buy {
+      background: var(--primary); color: #fff; border: none;
+      padding: 0.55rem; border-radius: 10px; font-weight: 700; font-size: 0.82rem;
+      cursor: pointer; transition: 0.2s;
+    }
+    .btn-buy:hover { background: #2563eb; }
+
+    /* Modals & Cool Login Screen */
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(6, 10, 20, 0.82); backdrop-filter: blur(12px);
+      display: none; align-items: center; justify-content: center; padding: 1rem;
+    }
+    .modal-backdrop.open { display: flex; animation: fadeUp 0.28s ease; }
+    .modal-card {
+      background: linear-gradient(160deg, #162038 0%, #0f172a 100%);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 22px; width: 100%; max-width: 500px; max-height: 92vh;
+      overflow-y: auto; padding: 1.75rem; position: relative;
+      box-shadow: 0 25px 55px rgba(0,0,0,0.7);
+    }
+    .close-btn {
+      position: absolute; top: 16px; right: 16px;
+      background: rgba(255,255,255,0.08); border: none; color: #fff;
+      width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font-size: 1rem;
+    }
+
+    /* Cooler Animated Auth Tabs */
+    .auth-banner {
+      background: linear-gradient(135deg, rgba(59,130,246,0.22), rgba(16,185,129,0.22));
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px; padding: 1rem; margin-bottom: 1rem;
+    }
+    .auth-tabs {
+      display: flex; background: rgba(255,255,255,0.06);
+      padding: 4px; border-radius: 12px; margin-bottom: 1.2rem;
+    }
+    .auth-tab {
+      flex: 1; text-align: center; padding: 0.6rem; border-radius: 9px;
+      font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: 0.25s; color: var(--muted);
+    }
+    .auth-tab.active {
+      background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff;
+      box-shadow: 0 4px 14px rgba(59,130,246,0.45);
+    }
+
+    .form-group { margin-bottom: 0.95rem; animation: slideInRight 0.25s ease; }
+    .form-group label { display: block; font-size: 0.82rem; color: var(--muted); margin-bottom: 0.35rem; font-weight: 600; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 0.72rem 0.95rem; border-radius: 11px;
+      border: 1px solid var(--border); background: rgba(255,255,255,0.06);
+      color: #fff; outline: none; font-size: 0.92rem; transition: 0.2s;
+    }
+    .form-group input:focus, .form-group textarea:focus { border-color: var(--primary); }
+    .form-group select option { background: #0f172a; color: #fff; }
+
+    /* Direct Image Upload Dropzone */
+    .upload-zone {
+      border: 2px dashed rgba(59, 130, 246, 0.55);
+      border-radius: 14px; padding: 1.2rem; text-align: center;
+      background: rgba(59, 130, 246, 0.07); cursor: pointer; transition: 0.25s;
+    }
+    .upload-zone:hover { border-color: var(--accent); background: rgba(16, 185, 129, 0.1); }
+    #previewImg {
+      max-height: 155px; border-radius: 10px; margin-top: 0.65rem; display: none; margin-inline: auto;
+    }
+
+    /* Payment Option Cards */
+    .pay-option {
+      border: 1px solid var(--border); border-radius: 12px; padding: 0.85rem 1rem;
+      margin-bottom: 0.65rem; cursor: pointer; display: flex; align-items: center; gap: 0.8rem;
+      background: rgba(255,255,255,0.03); transition: 0.25s;
+    }
+    .pay-option:hover { transform: translateX(4px); }
+    .pay-option.selected {
+      border-color: var(--accent); background: rgba(16, 185, 129, 0.14);
+    }
+
+    /* Toast Notification */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px; z-index: 200;
+      background: #10b981; color: #052e16; font-weight: 700;
+      padding: 0.85rem 1.35rem; border-radius: 12px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.45);
+      transform: translateY(100px); opacity: 0; transition: 0.3s;
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+  </style>
+</head>
+<body>
+
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+
+  <!-- Navbar -->
+  <header>
+    <div class="nav-container">
+      <div class="logo" onclick="filterCategory('All')">OLX<span style="font-weight:400;font-size:1rem;color:#94a3b8;">Neo</span></div>
+      <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Search mobiles, bikes, laptops, PS5, furniture..." oninput="renderListings()" />
+      </div>
+      <div class="nav-actions">
+        <button class="btn" onclick="openWishlistModal()">
+          ❤️ Wishlist <span class="badge" id="wishCount">0</span>
+        </button>
+        <button class="btn" onclick="openAddressPageModal()">📍 Address</button>
+        <button class="btn" onclick="openOrdersModal()">📦 Orders</button>
+        <button class="btn" id="authBtn" onclick="openModal('authModal')">👤 Login</button>
+        <button class="btn btn-sell" onclick="openSellModal()">+ SELL</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Category Bar -->
+  <div class="categories" id="categoryBar">
+    <div class="cat-pill active" onclick="filterCategory('All', this)">All Categories</div>
+    <div class="cat-pill" onclick="filterCategory('Mobiles', this)">📱 Mobiles</div>
+    <div class="cat-pill" onclick="filterCategory('Electronics', this)">💻 Electronics</div>
+    <div class="cat-pill" onclick="filterCategory('Gaming', this)">🎮 Gaming</div>
+    <div class="cat-pill" onclick="filterCategory('Bikes', this)">🏍️ Bikes</div>
+    <div class="cat-pill" onclick="filterCategory('Cars', this)">🚗 Cars</div>
+    <div class="cat-pill" onclick="filterCategory('Furniture', this)">🛋️ Furniture</div>
+  </div>
+
+  <!-- Marketplace Grid -->
+  <main class="container">
+    <div class="grid" id="listingsGrid"></div>
+  </main>
+
+  <!-- 1. COOL LOGIN / CREATE ACCOUNT MODAL -->
+  <div class="modal-backdrop" id="authModal">
+    <div class="modal-card">
+      <button class="close-btn" onclick="closeModal('authModal')">✕</button>
+      <div class="auth-banner">
+        <h2 style="font-size:1.45rem;font-weight:800;">Welcome to OLX Neo ✨</h2>
+        <p style="color:#cbd5e1;font-size:0.84rem;margin-top:4px;">Create an account or sign in to save wishlists, post ads & checkout fast.</p>
+      </div>
+
+      <div class="auth-tabs">
+        <div class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Sign In</div>
+        <div class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">Create Account</div>
+      </div>
+
+      <form id="authForm" onsubmit="submitAuth(event)">
+        <div class="form-group" id="nameField" style="display:none;">
+          <label>Full Name</label>
+          <input type="text" id="authName" placeholder="e.g. Srikanth" />
+        </div>
+        <div class="form-group" id="waField" style="display:none;">
+          <label>Your WhatsApp Number</label>
+          <input type="tel" id="authWhatsapp" placeholder="e.g. 9876543210" />
+        </div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" id="authEmail" required placeholder="you@example.com" />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="authPassword" required placeholder="••••••••" />
+        </div>
+        <button type="submit" class="btn btn-sell" style="width:100%;justify-content:center;padding:0.88rem;margin-top:0.5rem;" id="authSubmitBtn">
+          Sign In Now →
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. DIRECT IMAGE UPLOAD (+ SELL) MODAL -->
+  <div class="modal-backdrop" id="sellModal">
+    <div class="modal-card">
+      <button class="close-btn" onclick="closeModal('sellModal')">✕</button>
+      <h2 style="font-size:1.35rem;font-weight:800;margin-bottom:1rem;">📸 Post Your Ad on OLX Neo</h2>
+      <form id="sellForm" onsubmit="submitListing(event)">
+        <div class="form-group">
+          <label>Upload Product Photo Directly (No URL Needed)</label>
+          <div class="upload-zone" onclick="document.getElementById('imageInput').click()">
+            <p style="font-weight:700;font-size:0.92rem;">📁 Tap to Choose Photo from Phone / PC</p>
+            <p style="font-size:0.75rem;color:var(--muted);margin-top:4px;">Auto-compressed for ultra-fast loading</p>
+            <img id="previewImg" alt="Preview" />
+          </div>
+          <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="handleImagePreview(event)" />
+        </div>
+        <div class="form-group">
+          <label>Ad Title</label>
+          <input type="text" id="sellTitle" required placeholder="e.g. OnePlus Nord Buds 3 Pro - Mint Condition" />
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+          <div class="form-group">
+            <label>Category</label>
+            <select id="sellCategory">
+              <option>Mobiles</option>
+              <option>Electronics</option>
+              <option>Gaming</option>
+              <option>Bikes</option>
+              <option>Cars</option>
+              <option>Furniture</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Price (₹)</label>
+            <input type="number" id="sellPrice" required placeholder="e.g. 2200" />
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+          <div class="form-group">
+            <label>Seller WhatsApp Number</label>
+            <input type="tel" id="sellWhatsapp" required placeholder="9876543210" />
+          </div>
+          <div class="form-group">
+            <label>Location</label>
+            <input type="text" id="sellLocation" required placeholder="Avadi, Chennai" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="sellDesc" rows="2" required placeholder="Condition, warranty, accessories included..."></textarea>
+        </div>
+        <button type="submit" class="btn btn-sell" style="width:100%;justify-content:center;padding:0.88rem;">
+          Publish Ad Live 🚀
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. DEDICATED ADDRESS PAGE MODAL -->
+  <div class="modal-backdrop" id="addressModal">
+    <div class="modal-card">
+      <button class="close-btn" onclick="closeModal('addressModal')">✕</button>
+      <h2 style="font-size:1.35rem;font-weight:800;margin-bottom:0.35rem;">📍 Saved Delivery Address</h2>
+      <p style="color:var(--muted);font-size:0.84rem;margin-bottom:1rem;">Save your doorstep address for 1-click OLX Neo checkout.</p>
+      <form onsubmit="saveStandaloneAddress(event)">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.65rem;">
+          <div class="form-group">
+            <label>Receiver Name</label>
+            <input type="text" id="savedAddrName" required placeholder="Full Name" />
+          </div>
+          <div class="form-group">
+            <label>WhatsApp / Mobile</label>
+            <input type="tel" id="savedAddrPhone" required placeholder="9876543210" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Flat, House No., Street & Landmark</label>
+          <input type="text" id="savedAddrLine" required placeholder="No. 14, Kamaraj Nagar Main Road" />
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.65rem;">
+          <div class="form-group">
+            <label>City</label>
+            <input type="text" id="savedAddrCity" required placeholder="Chennai" />
+          </div>
+          <div class="form-group">
+            <label>Pincode</label>
+            <input type="text" id="savedAddrPin" required placeholder="600054" />
+          </div>
+          <div class="form-group">
+            <label>Address Type</label>
+            <select id="savedAddrType">
+              <option>Home</option>
+              <option>College / Work</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-sell" style="width:100%;justify-content:center;padding:0.85rem;">
+          💾 Save Delivery Address
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. CHECKOUT & MULTI-PAYMENT MODAL -->
+  <div class="modal-backdrop" id="checkoutModal">
+    <div class="modal-card">
+      <button class="close-btn" onclick="closeModal('checkoutModal')">✕</button>
+      <h2 style="font-size:1.35rem;font-weight:800;">🚚 Delivery Address & Payment</h2>
+      <p id="checkoutItemTitle" style="color:var(--accent);font-weight:700;font-size:0.9rem;margin:0.35rem 0 1rem;"></p>
+
+      <form onsubmit="submitOrder(event)">
+        <h4 style="font-size:0.82rem;text-transform:uppercase;color:var(--muted);margin-bottom:0.6rem;">1. Delivery Address</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.65rem;">
+          <div class="form-group">
+            <label>Receiver Name</label>
+            <input type="text" id="addrName" required placeholder="Full Name" />
+          </div>
+          <div class="form-group">
+            <label>WhatsApp / Mobile</label>
+            <input type="tel" id="addrPhone" required placeholder="9876543210" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Flat, House No., Street & Landmark</label>
+          <input type="text" id="addrLine" required placeholder="No. 14, Kamaraj Nagar Main Road" />
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.65rem;">
+          <div class="form-group">
+            <label>City</label>
+            <input type="text" id="addrCity" required placeholder="Chennai" />
+          </div>
+          <div class="form-group">
+            <label>Pincode</label>
+            <input type="text" id="addrPin" required placeholder="600054" />
+          </div>
+          <div class="form-group">
+            <label>Address Type</label>
+            <select id="addrType">
+              <option>Home</option>
+              <option>College / Work</option>
+            </select>
+          </div>
+        </div>
+
+        <h4 style="font-size:0.82rem;text-transform:uppercase;color:var(--muted);margin:0.8rem 0 0.6rem;">2. Select Payment Option</h4>
+        <div class="pay-option selected" onclick="selectPayment('Cash on Delivery (COD)', this)">
+          <input type="radio" name="payMethod" checked />
+          <div>
+            <div style="font-weight:700;font-size:0.92rem;">💵 Cash on Delivery (COD)</div>
+            <div style="font-size:0.76rem;color:var(--muted);">Inspect item in person and pay cash/UPI at doorstep</div>
+          </div>
+        </div>
+        <div class="pay-option" onclick="selectPayment('UPI Instant Pay (GPay / PhonePe)', this)">
+          <input type="radio" name="payMethod" />
+          <div>
+            <div style="font-weight:700;font-size:0.92rem;">⚡ Online UPI Payment (GPay / PhonePe / Paytm)</div>
+            <div style="font-size:0.76rem;color:var(--muted);">Instant verified UPI transfer with buyer protection</div>
+          </div>
+        </div>
+        <div class="pay-option" onclick="selectPayment('Credit / Debit Card', this)">
+          <input type="radio" name="payMethod" />
+          <div>
+            <div style="font-weight:700;font-size:0.92rem;">💳 Credit / Debit Card</div>
+            <div style="font-size:0.76rem;color:var(--muted);">Visa, MasterCard, RuPay accepted</div>
+          </div>
+        </div>
+
+        <div id="onlinePayBox" style="display:none;margin-bottom:0.85rem;" class="form-group">
+          <label>Enter UPI ID or Card Last 4 Digits</label>
+          <input type="text" id="upiOrCardInput" placeholder="yourname@okaxis" />
+        </div>
+
+        <button type="submit" class="btn btn-sell" style="width:100%;justify-content:center;padding:0.9rem;font-size:0.98rem;">
+          ✅ Confirm & Place Order
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 5. WISHLIST & ORDERS MODAL -->
+  <div class="modal-backdrop" id="listModal">
+    <div class="modal-card">
+      <button class="close-btn" onclick="closeModal('listModal')">✕</button>
+      <h2 id="listModalTitle" style="font-size:1.35rem;font-weight:800;margin-bottom:1rem;"></h2>
+      <div id="listModalContent"></div>
+    </div>
+  </div>
+
+  <div id="toast">Action successful!</div>
+
+  <script>
+    // 8 Pre-loaded Store Items across all categories
+    const DEFAULT_STORE_ITEMS = [
+      {
+        id: 101,
+        title: "iPhone 14 Pro 128GB - Deep Purple (Mint Condition)",
+        category: "Mobiles",
+        price: 64500,
+        location: "Anna Nagar, Chennai",
+        whatsapp: "919876543210",
+        description: "Battery health 91%, original box and cable included. Zero scratches, always used with tempered glass.",
+        image_path: "https://images.unsplash.com/photo-1678685888221-cda773a3dcdb?auto=format&fit=crop&w=700&q=80",
+        seller_name: "Arjun K.",
+        created_at: "Today"
+      },
+      {
+        id: 102,
+        title: "Sony PlayStation 5 Disc Edition + 2 DualSense Controllers",
+        category: "Gaming",
+        price: 38000,
+        location: "Avadi, Chennai",
+        whatsapp: "919876543211",
+        description: "Barely used PS5 Slim Disc edition with 2 controllers and Spider-Man 2 game disc.",
+        image_path: "https://images.unsplash.com/photo-1606813907291-d86efa9b94db?auto=format&fit=crop&w=700&q=80",
+        seller_name: "Rahul S.",
+        created_at: "Yesterday"
+      },
+      {
+        id: 103,
+        title: "ASUS TUF Gaming Laptop RTX 3050 / 16GB RAM / 512GB SSD",
+        category: "Electronics",
+        price: 42999,
+        location: "T. Nagar, Chennai",
+        whatsapp: "919876543212",
+        description: "144Hz IPS display, RGB keyboard, runs Minecraft, GTA V, and coding tools smoothly.",
+        image_path: "https://images.unsplash.com/photo-1603302576837-37561b2e2302?auto=format&fit=crop&w=700&q=80",
+        seller_name: "Vikram M.",
+        created_at: "2 days ago"
+      },
+      {
+        id: 104,
+        title: "OnePlus Nord Buds 3 Pro TWS Earbuds (Starry Black)",
+        category: "Electronics",
+        price: 2199,
+        location: "Ambattur, Chennai",
+        whatsapp: "919876543213",
+        description: "49dB Active Noise Cancellation, deep bass 12.4mm drivers, 44 hrs battery backup with bill & box.",
+        image_path: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=700&q=80",
+        seller_name: "Deepak V.",
+        created_at: "2 days ago"
+      },
+      {
+        id: 105,
+        title: "Royal Enfield Classic 350 Stealth Black (2024 Model)",
+        category: "Bikes",
+        price: 165000,
+        location: "Tambaram, Chennai",
+        whatsapp: "919876543214",
+        description: "Single owner, 6,400 km driven, dual-channel ABS, showroom serviced with full insurance.",
+        image_path: "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=700&q=80",
+        seller_name: "Karthik R.",
+        created_at: "3 days ago"
+      },
+      {
+        id: 106,
+        title: "Samsung Galaxy S23 Ultra 5G (256GB, Phantom Black)",
+        category: "Mobiles",
+        price: 68900,
+        location: "Velachery, Chennai",
+        whatsapp: "919876543215",
+        description: "200MP camera with 100x Space Zoom, built-in S-Pen, 45W Samsung adapter included.",
+        image_path: "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?auto=format&fit=crop&w=700&q=80",
+        seller_name: "Suresh P.",
+        created_at: "4 days ago"
+      },
+      {
+        id: 107,
+        title: "Maruti Suzuki Swift ZXi+ Automatic (2022) - Red",
+        category: "Cars",
+        price: 645000,
+        location: "Porur, Chennai",
+        whatsapp: "919876543216",
+        description: "18,500 km driven, Apple CarPlay touchscreen, alloy wheels, rear camera, company service history.",
+        image_path: "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=700&q=80",
+        seller_name: "Manoj N.",
+        created_at: "5 days ago"
+      },
+      {
+        id: 108,
+        title: "Ergonomic Mesh Gaming & Study Chair + Wooden Desk",
+        category: "Furniture",
+        price: 6500,
+        location: "Avadi, Chennai",
+        whatsapp: "919876543217",
+        description: "Adjustable lumbar support chair with sturdy 4ft engineered wood laptop table. Great for coding setups.",
+        image_path: "https://images.unsplash.com/photo-1580480055273-228ff5388ef8?auto=format&fit=crop&w=700&q=80",
+        seller_name: "Pranav S.",
+        created_at: "5 days ago"
+      }
+    ];
+
+    // Load or seed local store data
+    let storedListings = JSON.parse(localStorage.getItem('olx_neo_listings_v2'));
+    if (!storedListings || !storedListings.length) {
+      storedListings = DEFAULT_STORE_ITEMS;
+      localStorage.setItem('olx_neo_listings_v2', JSON.stringify(storedListings));
+    }
+    let allListings = storedListings;
+
+    let registeredUsers = JSON.parse(localStorage.getItem('olx_neo_users')) || [];
+    let currentUser = JSON.parse(localStorage.getItem('olx_neo_current_user')) || null;
+    let wishlistIds = JSON.parse(localStorage.getItem('olx_neo_wishlist')) || [];
+    let savedAddress = JSON.parse(localStorage.getItem('olx_neo_address')) || null;
+    let ordersList = JSON.parse(localStorage.getItem('olx_neo_orders')) || [];
+
+    let currentCategory = 'All';
+    let authMode = 'login';
+    let uploadedBase64Image = null;
+    let activeCheckoutItem = null;
+    let selectedPaymentMethod = 'Cash on Delivery (COD)';
+
+    function cleanWhatsApp(num) {
+      const digits = String(num || '').replace(/\D/g, '');
+      return digits.length === 10 ? '91' + digits : (digits || '919876543210');
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2800);
+    }
+
+    function syncUserUI() {
+      const btn = document.getElementById('authBtn');
+      if (currentUser) {
+        btn.innerHTML = `👋 ${currentUser.name.split(' ')[0]} (Logout)`;
+        btn.onclick = logoutUser;
+        document.getElementById('sellWhatsapp').value = currentUser.whatsapp || '';
+      } else {
+        btn.innerHTML = '👤 Login';
+        btn.onclick = () => openModal('authModal');
+      }
+
+      const addr = savedAddress || (currentUser ? { name: currentUser.name, phone: currentUser.whatsapp } : {});
+      ['savedAddrName', 'addrName'].forEach(id => document.getElementById(id).value = addr.name || '');
+      ['savedAddrPhone', 'addrPhone'].forEach(id => document.getElementById(id).value = addr.phone || '');
+      ['savedAddrLine', 'addrLine'].forEach(id => document.getElementById(id).value = addr.line || '');
+      ['savedAddrCity', 'addrCity'].forEach(id => document.getElementById(id).value = addr.city || '');
+      ['savedAddrPin', 'addrPin'].forEach(id => document.getElementById(id).value = addr.pin || '');
+
+      document.getElementById('wishCount').textContent = wishlistIds.length;
+    }
+
+    function filterCategory(cat, el) {
+      currentCategory = cat;
+      if (el) {
+        document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+        el.classList.add('active');
+      }
+      renderListings();
+    }
+
+    function renderListings() {
+      const q = document.getElementById('searchInput').value.toLowerCase();
+      const grid = document.getElementById('listingsGrid');
+      const filtered = allListings.filter(item => {
+        const matchCat = currentCategory === 'All' || item.category === currentCategory;
+        const matchQ = item.title.toLowerCase().includes(q) ||
+                       item.description.toLowerCase().includes(q) ||
+                       item.location.toLowerCase().includes(q);
+        return matchCat && matchQ;
+      });
+
+      if (!filtered.length) {
+        grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted);">No matching ads found in this category.</div>`;
+        return;
+      }
+
+      grid.innerHTML = filtered.map((item, idx) => {
+        const isWished = wishlistIds.includes(item.id);
+        const waText = encodeURIComponent(`Hi ${item.seller_name}, I saw your ad "${item.title}" listed for ₹${Number(item.price).toLocaleString('en-IN')} on OLX Neo. Is it still available?`);
+        const waLink = `https://wa.me/${item.whatsapp}?text=${waText}`;
+        return `
+          <div class="card" style="animation-delay:${idx * 0.05}s">
+            <div class="card-img-wrap">
+              <img src="${item.image_path}" alt="${item.title}" loading="lazy" />
+              <span class="cat-tag">${item.category}</span>
+              <button class="wish-btn ${isWished ? 'active' : ''}" onclick="toggleWishlist(${item.id}, this)">
+                ${isWished ? '❤️' : '🤍'}
+              </button>
+            </div>
+            <div class="card-body">
+              <div class="price">₹${Number(item.price).toLocaleString('en-IN')}</div>
+              <div class="title">${item.title}</div>
+              <div class="desc">${item.description}</div>
+              <div class="meta">
+                <span>📍 ${item.location}</span>
+                <span>🕒 ${item.created_at}</span>
+              </div>
+              <div class="card-actions">
+                <a href="${waLink}" target="_blank" class="btn-wa">💬 WhatsApp</a>
+                <button class="btn-buy" onclick="openCheckout(${item.id})">⚡ Buy Now</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Direct Image Upload + Client-side Compression
+    function handleImagePreview(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const MAX_W = 720;
+          const scale = img.width > MAX_W ? MAX_W / img.width : 1;
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+
+          uploadedBase64Image = canvas.toDataURL('image/jpeg', 0.78);
+          const preview = document.getElementById('previewImg');
+          preview.src = uploadedBase64Image;
+          preview.style.display = 'block';
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function submitListing(e) {
+      e.preventDefault();
+      if (!uploadedBase64Image) {
+        return showToast("📸 Please tap the upload box to pick a product photo!");
+      }
+
+      const newAd = {
+        id: Date.now(),
+        title: document.getElementById('sellTitle').value.trim(),
+        category: document.getElementById('sellCategory').value,
+        price: Number(document.getElementById('sellPrice').value),
+        whatsapp: cleanWhatsApp(document.getElementById('sellWhatsapp').value),
+        location: document.getElementById('sellLocation').value.trim(),
+        description: document.getElementById('sellDesc').value.trim(),
+        image_path: uploadedBase64Image,
+        seller_name: currentUser ? currentUser.name : "Verified Seller",
+        created_at: "Just now"
+      };
+
+      allListings.unshift(newAd);
+      localStorage.setItem('olx_neo_listings_v2', JSON.stringify(allListings));
+
+      closeModal('sellModal');
+      document.getElementById('sellForm').reset();
+      document.getElementById('previewImg').style.display = 'none';
+      uploadedBase64Image = null;
+      renderListings();
+      showToast("🎉 Your ad is live on OLX Neo!");
+    }
+
+    function toggleWishlist(id, btnEl) {
+      const idx = wishlistIds.indexOf(id);
+      if (idx > -1) {
+        wishlistIds.splice(idx, 1);
+        btnEl.classList.remove('active');
+        btnEl.innerHTML = '🤍';
+        showToast("Removed from Wishlist");
+      } else {
+        wishlistIds.push(id);
+        btnEl.classList.add('active');
+        btnEl.innerHTML = '❤️';
+        showToast("❤️ Saved to your Wishlist!");
+      }
+      localStorage.setItem('olx_neo_wishlist', JSON.stringify(wishlistIds));
+      document.getElementById('wishCount').textContent = wishlistIds.length;
+    }
+
+    function openWishlistModal() {
+      const wished = allListings.filter(i => wishlistIds.includes(i.id));
+      document.getElementById('listModalTitle').textContent = "❤️ Your Saved Wishlist";
+      const box = document.getElementById('listModalContent');
+      if (!wished.length) {
+        box.innerHTML = `<p style="color:var(--muted);padding:1rem 0;">Your wishlist is empty. Tap the heart icon on any product!</p>`;
+      } else {
+        box.innerHTML = wished.map(i => `
+          <div style="display:flex;align-items:center;gap:0.85rem;padding:0.75rem 0;border-bottom:1px solid var(--border);">
+            <img src="${i.image_path}" style="width:64px;height:64px;border-radius:10px;object-fit:cover;" />
+            <div style="flex:1;">
+              <div style="font-weight:700;font-size:0.92rem;">${i.title}</div>
+              <div style="color:var(--accent);font-weight:800;">₹${Number(i.price).toLocaleString('en-IN')}</div>
+            </div>
+            <button class="btn-buy" onclick="closeModal('listModal');openCheckout(${i.id})">Buy Now</button>
+          </div>
+        `).join('');
+      }
+      openModal('listModal');
+    }
+
+    function openAddressPageModal() {
+      syncUserUI();
+      openModal('addressModal');
+    }
+
+    function saveStandaloneAddress(e) {
+      e.preventDefault();
+      savedAddress = {
+        name: document.getElementById('savedAddrName').value.trim(),
+        phone: cleanWhatsApp(document.getElementById('savedAddrPhone').value),
+        line: document.getElementById('savedAddrLine').value.trim(),
+        city: document.getElementById('savedAddrCity').value.trim(),
+        pin: document.getElementById('savedAddrPin').value.trim(),
+        type: document.getElementById('savedAddrType').value
+      };
+      localStorage.setItem('olx_neo_address', JSON.stringify(savedAddress));
+      syncUserUI();
+      closeModal('addressModal');
+      showToast("📍 Delivery address saved!");
+    }
+
+    function openCheckout(listingId) {
+      if (!currentUser) {
+        showToast("Please sign in or create an account to checkout!");
+        switchAuthTab('register');
+        return openModal('authModal');
+      }
+      activeCheckoutItem = allListings.find(i => i.id === listingId);
+      if (!activeCheckoutItem) return;
+      syncUserUI();
+      document.getElementById('checkoutItemTitle').textContent =
+        `${activeCheckoutItem.title} — ₹${Number(activeCheckoutItem.price).toLocaleString('en-IN')}`;
+      openModal('checkoutModal');
+    }
+
+    function selectPayment(method, el) {
+      selectedPaymentMethod = method;
+      document.querySelectorAll('.pay-option').forEach(o => o.classList.remove('selected'));
+      el.classList.add('selected');
+      el.querySelector('input').checked = true;
+      document.getElementById('onlinePayBox').style.display = method.includes('Cash') ? 'none' : 'block';
+    }
+
+    function submitOrder(e) {
+      e.preventDefault();
+      savedAddress = {
+        name: document.getElementById('addrName').value.trim(),
+        phone: cleanWhatsApp(document.getElementById('addrPhone').value),
+        line: document.getElementById('addrLine').value.trim(),
+        city: document.getElementById('addrCity').value.trim(),
+        pin: document.getElementById('addrPin').value.trim(),
+        type: document.getElementById('addrType').value
+      };
+      localStorage.setItem('olx_neo_address', JSON.stringify(savedAddress));
+
+      const fullAddress = `${savedAddress.name} (${savedAddress.phone}), ${savedAddress.line}, ${savedAddress.city} - ${savedAddress.pin} [${savedAddress.type}]`;
+      const payStatus = selectedPaymentMethod.includes('Cash') ? 'Pay on Delivery (COD)' : `Paid Online (${selectedPaymentMethod})`;
+
+      ordersList.unshift({
+        id: Date.now(),
+        item_title: activeCheckoutItem.title,
+        item_price: activeCheckoutItem.price,
+        item_image: activeCheckoutItem.image_path,
+        delivery_address: fullAddress,
+        payment_status: payStatus
+      });
+      localStorage.setItem('olx_neo_orders', JSON.stringify(ordersList));
+
+      closeModal('checkoutModal');
+      showToast("🎉 Order Confirmed! Opening Orders...");
+      openOrdersModal();
+    }
+
+    function openOrdersModal() {
+      document.getElementById('listModalTitle').textContent = "📦 Your Orders & Payment Status";
+      const box = document.getElementById('listModalContent');
+      if (!ordersList.length) {
+        box.innerHTML = `<p style="color:var(--muted);padding:1rem 0;">No orders placed yet.</p>`;
+      } else {
+        box.innerHTML = ordersList.map(o => `
+          <div style="padding:0.9rem;border:1px solid var(--border);border-radius:14px;margin-bottom:0.75rem;background:rgba(255,255,255,0.03);">
+            <div style="display:flex;gap:0.8rem;align-items:center;">
+              <img src="${o.item_image}" style="width:58px;height:58px;border-radius:10px;object-fit:cover;" />
+              <div style="flex:1;">
+                <div style="font-weight:700;font-size:0.92rem;">${o.item_title}</div>
+                <div style="color:var(--accent);font-weight:800;">₹${Number(o.item_price).toLocaleString('en-IN')} • ${o.payment_status}</div>
+                <div style="font-size:0.75rem;color:var(--muted);margin-top:3px;">📍 ${o.delivery_address}</div>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+      openModal('listModal');
+    }
+
+    // WORKING ACCOUNT CREATION & LOGIN (Pure Frontend LocalStorage)
+    function switchAuthTab(mode) {
+      authMode = mode;
+      document.getElementById('tabLogin').classList.toggle('active', mode === 'login');
+      document.getElementById('tabRegister').classList.toggle('active', mode === 'register');
+      document.getElementById('nameField').style.display = mode === 'register' ? 'block' : 'none';
+      document.getElementById('waField').style.display = mode === 'register' ? 'block' : 'none';
+      document.getElementById('authName').required = (mode === 'register');
+      document.getElementById('authWhatsapp').required = (mode === 'register');
+      document.getElementById('authSubmitBtn').textContent = mode === 'login' ? 'Sign In Now →' : 'Create Free Account →';
+    }
+
+    function submitAuth(e) {
+      e.preventDefault();
+      const email = document.getElementById('authEmail').value.trim().toLowerCase();
+      const password = document.getElementById('authPassword').value;
+
+      if (authMode === 'register') {
+        const name = document.getElementById('authName').value.trim() || email.split('@')[0];
+        const whatsapp = cleanWhatsApp(document.getElementById('authWhatsapp').value);
+
+        const existing = registeredUsers.find(u => u.email === email);
+        if (existing) {
+          showToast("Account already exists! Signing you in...");
+          currentUser = existing;
+        } else {
+          const newUser = { id: Date.now(), name, email, whatsapp, password };
+          registeredUsers.push(newUser);
+          localStorage.setItem('olx_neo_users', JSON.stringify(registeredUsers));
+          currentUser = newUser;
+        }
+        localStorage.setItem('olx_neo_current_user', JSON.stringify(currentUser));
+        document.getElementById('authForm').reset();
+        closeModal('authModal');
+        syncUserUI();
+        showToast(`🎉 Account created! Welcome, ${currentUser.name}!`);
+      } else {
+        let found = registeredUsers.find(u => u.email === email);
+        if (found && found.password !== password) {
+          return showToast("❌ Incorrect password. Please try again.");
+        }
+        if (!found) {
+          // Auto-create account on first login for frictionless testing
+          found = {
+            id: Date.now(),
+            name: email.split('@')[0],
+            email,
+            whatsapp: '919876543210',
+            password
+          };
+          registeredUsers.push(found);
+          localStorage.setItem('olx_neo_users', JSON.stringify(registeredUsers));
+        }
+        currentUser = found;
+        localStorage.setItem('olx_neo_current_user', JSON.stringify(currentUser));
+        document.getElementById('authForm').reset();
+        closeModal('authModal');
+        syncUserUI();
+        showToast(`✨ Welcome back, ${currentUser.name}!`);
+      }
+    }
+
+    function logoutUser() {
+      currentUser = null;
+      localStorage.removeItem('olx_neo_current_user');
+      syncUserUI();
+      showToast("👋 Logged out safely");
+    }
+
+    function openSellModal() {
+      if (!currentUser) {
+        showToast("Please create an account or sign in to post an ad!");
+        switchAuthTab('register');
+        return openModal('authModal');
+      }
+      openModal('sellModal');
+    }
+
+    function openModal(id) { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+    syncUserUI();
+    renderListings();
+  </script>
+</body>
+</html>
